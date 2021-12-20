@@ -10,13 +10,14 @@ def character_create(username):
     while True:
         char_race = input("\n\u001b[4mPick a race:\u001b[0m\nHuman\nOrc\nTroll\nElf\n\n").lower()
         if char_race in ["human", "orc", "troll", "elf"]:
-            with open(f'{username}/{char_name}.wander', 'w'):
-                pass
+            with open(f'{username}/{char_name}.wander', 'w') as f:
+                f.write("100\n100\n5")
             break
         else:
             print("Invalid option!\n")
 
 def account_create():
+    global username
     username = input("Username: ")
     password = input("Password: ")
 
@@ -27,7 +28,7 @@ def account_create():
     character_create(username)
 
 if os.path.exists('accounts.txt') == 0 or os.stat('accounts.txt').st_size == 0:
-    print("\u001b[4mWelcome to Wander... create an account to begin.\u001b[0m")
+    print("\n\u001b[4mWelcome to Wander... create an account to begin.\u001b[0m")
     account_create()
 else:
     action = input("\n\u001b[4mLog in or Sign up? [L/S]\u001b[0m\n").lower()
@@ -45,7 +46,11 @@ else:
 
     else: print("Invalid Option\n")
 
-#all items in game
+#character picker
+#for i in os.listdir(username):
+#    print(i.split('.')[0])
+
+#classes
 weapons = {
     1: {'name': "Wood Hammer", 'dmg': 1, 'rarity': "common"},
     2: {'name': "Copper Sword", 'dmg': random.randint(2,4), 'rarity': "common"},
@@ -59,44 +64,72 @@ class character:
         self.maxhp = maxhp
         self.hp = hp
         self.attack = attack
-        self.deceased = False
         #gear/items
         self.inventory = []
         self.weapon = None
     def takeDamage(self, dmg):
+        old_hp = self.hp
         self.hp -= dmg
-        if self.hp <= 0: self.deceased = True
+        print(f"{self.name} HP: {old_hp} => {self.hp}")
     def equipItem(self, item):
         old_atk = self.attack
         self.weapon = self.inventory[self.inventory.index(item)]
         self.inventory.remove(item)
         print(f"\nSuccessfully equipped: {item}\nAttack: {old_atk} => {self.attack}")
 
-player = character(char_name, 100, 100, 1)
+player = character(char_name)
+
+#load player data
+with open(f'{username}/{char_name}.wander', 'r') as f:
+    data = f.readlines()
+
+    player.maxhp = int(data[0])
+    player.hp = int(data[1])
+    player.attack = int(data[2])
 
 #main game loop
 while True:
     status = input("\n\u001b[4mWhat do you wish to do?  [W/I/CC]\u001b[0m\nWander\nInventory\nChange Character\n\n").lower()
     if status == "wander" or status == "w":
         chance = random.randint(1,2)
+
         if chance == 1: # Beast PvE Encounter
-            Beast = character("Beast", 50, 50, 2)
-            print("You stumble upon a wild Beast!")
+            beast = character("Beast", 50, 50, 2)
+            print("\nYou stumble upon a wild Beast!")
+            while beast.hp > 0:
+                action = input("\n\u001b[4mWhat do you wish to do? [A/F]\u001b[0m\nAttack\nFlea\n\n").lower()
+                if action == "attack" or action == "a":
+                    beast.takeDamage(player.attack)
+                    print("\nBeast uses Attack!")
+                    player.takeDamage(beast.attack)
+
+                elif action == "flea" or action == "f":
+                    chance = random.randint(1,4)
+                    if chance <= 3:
+                        print("\nFlea failed!")
+                    elif chance > 3:
+                        print("\nFlea successfull.")
+                        break
+
         elif chance == 2: # Tavern Instance Encounter
             Tavernkeeper = character("Tavernkeeper")
-            print("Before you appears a small tavern")
-        else: #Testing purposes
-            pass
+            print("\nBefore you appears a small tavern")
+            print("\n\n\u001b[4mTavernkeeper's Inventory\u001b[0m\n")
 
     elif status == "inventory" or status == "i":
-        if len(player.inventory) <= 0:
-            print("This character's inventory is empty, collect items by playing!")
+        if len(player.inventory) <= 0: print("This character's inventory is empty, collect items by playing!")
         else:
-            print(player.inventory)
+            for i in player.inventory: print(i)
 
-    elif status == "change character" or status == "cc": character_create() #Remember to change to character picker
+    elif status == "change character" or status == "cc": character_create(username) #Remember to change to character picker
 
-    elif status == "!quit" or status == "!disconnect": 
+    elif status == "!quit" or status == "!disconnect":
+
+        #save player data
+        with open(f'{username}/{char_name}.wander', 'w') as f:
+            f.write(f"{player.maxhp}\n{player.hp}\n{player.attack}")
+
+        #exit
         print("\nThank you for playing Wander!") 
         break
 
