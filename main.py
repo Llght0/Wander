@@ -1,17 +1,27 @@
 import os, random
 
+from character import character
+
 os.chdir(os.path.dirname(os.path.abspath(__file__))) #sets cwd to this directory
 
 #login
 def character_create(username):
     global char_name
-    char_name = input("\nWelcome to character creation!\n\u001b[4mEnter a name for your character.\u001b[0m\n")
+    char_name = input("\nWelcome to character creation!\n\u001b[4mEnter a name for your character.\u001b[0m\n\n")
 
     while True:
         char_race = input("\n\u001b[4mPick a race:\u001b[0m\nHuman\nOrc\nTroll\nElf\n\n").lower()
         if char_race in ["human", "orc", "troll", "elf"]:
-            with open(f'{username}/{char_name}.wander', 'w') as f:
-                f.write("100\n100\n5")
+            with open(f'{username}/{char_name}.wander', 'w') as File:
+                #Write starter character data
+                File.write( # char_race => maxHP => currentHP => attackDmg
+                    f'''
+                    {char_race}
+                    100
+                    100
+                    5
+                    '''
+                    )
             break
         else:
             print("Invalid option!\n")
@@ -51,41 +61,36 @@ else:
 #    print(i.split('.')[0])
 
 #classes
+class item:
+    def __init__(self, name, rarity="Unique", isUsable=False, useReply="Item used."):
+        self.name = name
+        self.rarity = rarity
+        self.isUsable = isUsable
+        self.useReply = useReply
+    def use(self):
+        print(self.useReply)
+
+class weapon(item):
+    def __init__(self, name, rarity="Common", isUsable=True, useReply="Weapon Equipped."):
+        super().__init__(name, rarity=rarity, isUsable=isUsable, useReply=useReply)
+
+#initialize loot items
 weapons = {
-    1: {'name': "Wood Hammer", 'dmg': 1, 'rarity': "common"},
-    2: {'name': "Copper Sword", 'dmg': random.randint(2,4), 'rarity': "common"},
-    3: {'name': "God's Fury", 'dmg': 100, 'rarity': "unique"},
+    1: weapon(""),
+    2: weapon(""),
+    3: weapon(""),
 }
 
-class character:
-    def __init__(self, name, maxhp=100, hp=100, attack=1):
-        #stats
-        self.name = name
-        self.maxhp = maxhp
-        self.hp = hp
-        self.attack = attack
-        #gear/items
-        self.inventory = []
-        self.weapon = None
-    def takeDamage(self, dmg):
-        old_hp = self.hp
-        self.hp -= dmg
-        print(f"{self.name} HP: {old_hp} => {self.hp}")
-    def equipItem(self, item):
-        old_atk = self.attack
-        self.weapon = self.inventory[self.inventory.index(item)]
-        self.inventory.remove(item)
-        print(f"\nSuccessfully equipped: {item}\nAttack: {old_atk} => {self.attack}")
-
+#initialize player
 player = character(char_name)
 
 #load player data
 with open(f'{username}/{char_name}.wander', 'r') as f:
     data = f.readlines()
 
-    player.maxhp = int(data[0])
-    player.hp = int(data[1])
-    player.attack = int(data[2])
+    player.maxhp = int(data[1])
+    player.hp = int(data[2])
+    player.attackDmg = int(data[3])
 
 #main game loop
 while True:
@@ -97,37 +102,53 @@ while True:
             beast = character("Beast", 50, 50, 2)
             print("\nYou stumble upon a wild Beast!")
             while beast.hp > 0:
-                action = input("\n\u001b[4mWhat do you wish to do? [A/F]\u001b[0m\nAttack\nFlea\n\n").lower()
+                action = input("\n\u001b[4mWhat do you wish to do? [A/F]\u001b[0m\nAttack\nFlee\n\n").lower()
                 if action == "attack" or action == "a":
-                    beast.takeDamage(player.attack)
+                    beast.takeDamage(player.attackDmg)
                     print("\nBeast uses Attack!")
-                    player.takeDamage(beast.attack)
+                    player.takeDamage(beast.attackDmg)
 
-                elif action == "flea" or action == "f":
+                elif action == "flee" or action == "f":
                     chance = random.randint(1,4)
                     if chance <= 3:
-                        print("\nFlea failed!")
+                        print("\nFlee failed!")
                     elif chance > 3:
-                        print("\nFlea successfull.")
+                        print("\nFlee successful.")
                         break
 
         elif chance == 2: # Tavern Instance Encounter
-            Tavernkeeper = character("Tavernkeeper")
-            print("\nBefore you appears a small tavern")
-            print("\n\n\u001b[4mTavernkeeper's Inventory\u001b[0m\n")
+            tavernkeeper = character("Tavernkeeper")
+            tavernkeeper.inventory.append(weapon("Wooden Hammer", "Common", True))
+            print("\nBefore you appears a small tavern.\n\n\u001b[4mTavernkeeper's Inventory\u001b[0m\n")
+            for i in tavernkeeper.inventory: print(i.name)
+            action = input("\n\u001b[4mWhat would you like to do? [L]\u001b[0m\nBuy\nSell\nLeave\n\n")
 
     elif status == "inventory" or status == "i":
-        if len(player.inventory) <= 0: print("This character's inventory is empty, collect items by playing!")
+        if len(player.inventory) <= 0: 
+            print("This character's inventory is empty, collect items by playing!")
         else:
-            for i in player.inventory: print(i)
+            for i in player.inventory: print(i.name)
 
     elif status == "change character" or status == "cc": character_create(username) #Remember to change to character picker
+
+    elif status == "help" or status == "h":
+        print(
+        '''
+        How to exit the game:
+            When in the action selection screen type !quit OR !disconnect, this will end the game loop.
+        '''
+            )
 
     elif status == "!quit" or status == "!disconnect":
 
         #save player data
         with open(f'{username}/{char_name}.wander', 'w') as f:
-            f.write(f"{player.maxhp}\n{player.hp}\n{player.attack}")
+            f.write(f'''
+                    
+                    {player.maxhp}
+                    {player.hp}
+                    {player.attackDmg}
+                    ''')
 
         #exit
         print("\nThank you for playing Wander!") 
