@@ -1,10 +1,13 @@
-class character:
-    def __init__(self, name, maxhp=100, hp=100, attackDmg=1):
+class new:
+    def __init__(self, name, attackDmg=1, maxhp=100, hp="maxhp"):
         #stats
         self.name = name
-        self.maxhp = maxhp
-        self.hp = hp
         self.attackDmg = attackDmg
+        self.maxhp = maxhp
+        if hp == "maxhp":
+            self.hp = self.maxhp
+        else:
+             self.hp = hp
         #gear/items
         self.inventory = []
         self.weapon = None
