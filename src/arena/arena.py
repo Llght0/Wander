@@ -1,9 +1,5 @@
 from src.arena import client, host
 
-#from core import character
-
-#player = character.new()
-
 def play():
     while True:
         action = input("Join or Create an arena match. [J/C]\n").lower()
@@ -17,6 +13,3 @@ def play():
             break
         else:
             print("Invalid Option!")
-
-if __name__ == "__main__":
-    play()
